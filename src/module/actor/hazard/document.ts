@@ -3,7 +3,7 @@ import type { InitiativeData } from "@actor/data/base.ts";
 import { Immunity } from "@actor/data/iwr.ts";
 import { attackFromMeleeItem, setHitPointsRollOptions } from "@actor/helpers.ts";
 import { ActorInitiative } from "@actor/initiative.ts";
-import { Modifier } from "@actor/modifiers.ts";
+import { Modifier, createProficiencyWithoutLevelModifier } from "@actor/modifiers.ts";
 import type { SaveType } from "@actor/types.ts";
 import { SAVE_TYPES } from "@actor/values.ts";
 import { ConditionPF2e } from "@item";
@@ -118,7 +118,8 @@ class HazardPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | 
                         type: "untyped",
                         modifier: system.attributes.stealth.value ?? 0,
                     }),
-                ],
+                    createProficiencyWithoutLevelModifier(this.level),
+                ].filter(R.isNonNull),
                 check: { type: "skill-check" },
             }),
         };
@@ -144,7 +145,8 @@ class HazardPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | 
                 label: "PF2E.BaseModifier",
                 modifier: system.attributes.ac.value - 10,
             });
-            const statistic = new ArmorStatistic(this, { rank: 1, modifiers: [baseModifier] });
+            const modifiers = [baseModifier, createProficiencyWithoutLevelModifier(this.level)].filter(R.isNonNull);
+            const statistic = new ArmorStatistic(this, { rank: 1, modifiers });
             this.armorClass = statistic.dc;
             system.attributes.ac = statistic.getTraceData();
         }
@@ -195,7 +197,8 @@ class HazardPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | 
                         label: "PF2E.ModifierTitle",
                         modifier: base,
                     }),
-                ],
+                    createProficiencyWithoutLevelModifier(this.level),
+                ].filter(R.isNonNull),
                 check: { type: "saving-throw" },
             });
 

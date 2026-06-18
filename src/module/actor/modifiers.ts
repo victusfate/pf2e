@@ -425,6 +425,22 @@ interface CreateProficiencyModifierParams {
     addLevel?: boolean;
 }
 
+/**
+ * Create a "Proficiency without Level" modifier, removing a creature, hazard, or other rules element's level from
+ * an authored statistic when the variant is enabled (returning `null` otherwise). Unlike PCs, whose bonuses are
+ * assembled from rank and level by `createProficiencyModifier`, these statistics bake the level in. Not applied to
+ * untrained values, such as a monster's unlisted skills, which never included a level.
+ */
+function createProficiencyWithoutLevelModifier(level: number): Modifier | null {
+    if (!game.pf2e.settings.variants.pwol.enabled) return null;
+    return new Modifier({
+        slug: "proficiency-without-level",
+        label: "PF2E.ProficiencyWithoutLevel",
+        modifier: -Math.max(level, 0),
+        type: "untyped",
+    });
+}
+
 /** A comparison which rates the first modifier as better than the second if it's modifier is at least as large. */
 const HIGHER_BONUS = (a: Modifier, b: Modifier) => a.modifier >= b.modifier;
 /** A comparison which rates the first modifier as better than the second if it's modifier is at least as small. */
@@ -812,6 +828,7 @@ export {
     CheckModifier,
     createAttributeModifier,
     createProficiencyModifier,
+    createProficiencyWithoutLevelModifier,
     DamageDicePF2e,
     ensureProficiencyOption,
     Modifier,

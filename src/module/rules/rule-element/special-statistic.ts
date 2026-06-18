@@ -1,5 +1,5 @@
 import type { CreaturePF2e } from "@actor";
-import { Modifier } from "@actor/modifiers.ts";
+import { Modifier, createProficiencyWithoutLevelModifier } from "@actor/modifiers.ts";
 import type { AttributeString } from "@actor/types.ts";
 import { ATTRIBUTE_ABBREVIATIONS, SAVE_TYPES } from "@actor/values.ts";
 import type { MagicTradition } from "@item/spell/types.ts";
@@ -83,13 +83,21 @@ class SpecialStatisticRuleElement extends RuleElement<SpecialStatisticSchema> {
 
         const label = this.itemCasting ? (extendedFrom?.label ?? this.label) : this.label;
         const checkType = this.type === "check" ? "check" : "attack-roll";
+        // An NPC's authored baseModifier values bake in its level: remove it under Proficiency without Level. When
+        // extending another statistic, that parent already carries the reduction, so don't apply it a second time.
+        const pwolModifier =
+            actor.isOfType("npc") && !this.extends
+                ? createProficiencyWithoutLevelModifier(actor.system.details.level.base)
+                : null;
         const modCheckDC =
             this.baseModifier && actor.type === "npc"
                 ? R.mapValues(this.baseModifier, (value, key) => {
                       const slug = typeof this.baseModifier?.mod === "number" && key !== "mod" ? `base-${key}` : "base";
                       const label = "PF2E.ModifierTitle";
                       const modifier = typeof value === "number" && key === "dc" ? value - 10 : value;
-                      return typeof modifier === "number" ? [new Modifier({ slug, label, modifier })] : [];
+                      return typeof modifier === "number"
+                          ? [new Modifier({ slug, label, modifier }), pwolModifier].filter(R.isNonNull)
+                          : [];
                   })
                 : { mod: [], check: [], dc: [] };
 

@@ -3582,6 +3582,7 @@
         "ProficiencyLevel2": "Expert",
         "ProficiencyLevel3": "Master",
         "ProficiencyLevel4": "Legendary",
+        "ProficiencyWithoutLevel": "Proficiency without Level",
         "ProgressBar": {
             "LoadingComplete": "Loading complete",
             "LoadingPack": "Loading {pack}"

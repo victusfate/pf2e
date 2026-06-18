@@ -1,5 +1,5 @@
 import type { ActorPF2e } from "@actor";
-import { Modifier } from "@actor/modifiers.ts";
+import { Modifier, createProficiencyWithoutLevelModifier } from "@actor/modifiers.ts";
 import { AttributeString } from "@actor/types.ts";
 import type { DatabaseUpdateCallbackOptions } from "@common/abstract/_types.d.mts";
 import { ItemPF2e, PhysicalItemPF2e, type SpellPF2e } from "@item";
@@ -190,6 +190,8 @@ class SpellcastingEntryPF2e<TParent extends ActorPF2e | null = ActorPF2e | null>
             const adjustment = actor.isElite ? 2 : actor.isWeak ? -2 : 0;
             const baseMod = Number(this.system?.spelldc?.value ?? 0) + adjustment;
             const baseDC = Number(this.system?.spelldc?.dc ?? 0) + adjustment;
+            // The authored spell attack/DC bake in the creature's level: remove it under Proficiency without Level
+            const pwolModifier = createProficiencyWithoutLevelModifier(actor.system.details.level.base);
 
             // Assign statistic data to the spellcasting entry
             this.statistic = new Statistic(actor as ActorPF2e, {
@@ -201,11 +203,17 @@ class SpellcastingEntryPF2e<TParent extends ActorPF2e | null = ActorPF2e | null>
                 check: {
                     type: "attack-roll",
                     domains: checkDomains,
-                    modifiers: [new Modifier({ slug: "base", label: "PF2E.ModifierTitle", modifier: baseMod })],
+                    modifiers: [
+                        new Modifier({ slug: "base", label: "PF2E.ModifierTitle", modifier: baseMod }),
+                        ...(pwolModifier ? [pwolModifier] : []),
+                    ],
                 },
                 dc: {
                     domains: dcDomains,
-                    modifiers: [new Modifier({ slug: "base", label: "PF2E.ModifierTitle", modifier: baseDC - 10 })],
+                    modifiers: [
+                        new Modifier({ slug: "base", label: "PF2E.ModifierTitle", modifier: baseDC - 10 }),
+                        ...(pwolModifier ? [pwolModifier] : []),
+                    ],
                 },
             });
         } else {

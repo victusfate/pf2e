@@ -36,7 +36,13 @@ import * as R from "remeda";
 import { AttackTraitHelpers } from "./creature/helpers.ts";
 import type { DamageRollFunction } from "./data/base.ts";
 import type { ActorSourcePF2e } from "./data/index.ts";
-import { CheckModifier, Modifier, StatisticModifier, createAttributeModifier } from "./modifiers.ts";
+import {
+    CheckModifier,
+    Modifier,
+    StatisticModifier,
+    createAttributeModifier,
+    createProficiencyWithoutLevelModifier,
+} from "./modifiers.ts";
 import type { NPCAreaAttack, NPCAttackAction, NPCStrike } from "./npc/data.ts";
 import { CheckContext } from "./roll-context/check.ts";
 import { DamageContext } from "./roll-context/damage.ts";
@@ -466,6 +472,14 @@ function strikeFromMeleeItem(item: MeleePF2e<ActorPF2e>): NPCStrike {
             adjustments: extractModifierAdjustments(synthetics.modifierAdjustments, domains, "base"),
         }),
     ];
+
+    // Remove the level from the authored attack bonus when Proficiency without Level is enabled. NPCs use their
+    // pre-elite/weak base level (elite/weak remain a separate adjustment); hazards have no such adjustment.
+    if (actor.isOfType("npc", "hazard")) {
+        const level = actor.isOfType("npc") ? actor.system.details.level.base : actor.level;
+        const pwolModifier = createProficiencyWithoutLevelModifier(level);
+        if (pwolModifier) modifiers.push(pwolModifier);
+    }
 
     modifiers.push(...extractModifiers(synthetics, domains));
     modifiers.push(...AttackTraitHelpers.createAttackModifiers({ item, domains }));

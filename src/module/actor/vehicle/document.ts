@@ -1,6 +1,6 @@
 import { ActorSizePF2e } from "@actor/data/size.ts";
 import { setHitPointsRollOptions } from "@actor/helpers.ts";
-import { Modifier } from "@actor/modifiers.ts";
+import { Modifier, createProficiencyWithoutLevelModifier } from "@actor/modifiers.ts";
 import type { ActorDimensions } from "@actor/types.ts";
 import type { ItemType } from "@item/types.ts";
 import { extractModifierAdjustments, extractModifiers } from "@module/rules/helpers.ts";
@@ -74,6 +74,7 @@ class VehiclePF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e |
         setHitPointsRollOptions(this);
 
         // Prepare AC
+        const acPWoL = createProficiencyWithoutLevelModifier(this.level);
         const armorStatistic = new ArmorStatistic(this, {
             modifiers: [
                 new Modifier({
@@ -82,6 +83,7 @@ class VehiclePF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e |
                     modifier: this.system.attributes.ac.value - 10,
                     adjustments: extractModifierAdjustments(this.synthetics.modifierAdjustments, ["all", "ac"], "base"),
                 }),
+                ...(acPWoL ? [acPWoL] : []),
             ],
         });
         this.armorClass = armorStatistic.dc;
@@ -95,6 +97,7 @@ class VehiclePF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e |
 
         const slug = "fortitude";
         const domains = [slug, "saving-throw", "all"];
+        const pwolModifier = createProficiencyWithoutLevelModifier(this.level);
         const modifiers = [
             new Modifier({
                 label: "PF2E.ModifierTitle",
@@ -102,6 +105,7 @@ class VehiclePF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e |
                 type: "untyped",
                 modifier: this.system.saves.fortitude.value,
             }),
+            ...(pwolModifier ? [pwolModifier] : []),
             ...extractModifiers(synthetics, domains),
         ];
 

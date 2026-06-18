@@ -7,7 +7,7 @@ import { CreatureSaves } from "@actor/creature/saves.ts";
 import { ActorSizePF2e } from "@actor/data/size.ts";
 import { attackFromMeleeItem, setHitPointsRollOptions } from "@actor/helpers.ts";
 import { ActorInitiative } from "@actor/initiative.ts";
-import { Modifier, StatisticModifier } from "@actor/modifiers.ts";
+import { Modifier, StatisticModifier, createProficiencyWithoutLevelModifier } from "@actor/modifiers.ts";
 import type { MovementType } from "@actor/types.ts";
 import { SAVE_TYPES } from "@actor/values.ts";
 import type { UserAction } from "@common/constants.d.mts";
@@ -240,7 +240,8 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                     modifier: system.attributes.ac.value - 10,
                     adjustments: extractModifierAdjustments(modifierAdjustments, ["all", "ac", "dex-based"], "base"),
                 }),
-            ],
+                createProficiencyWithoutLevelModifier(system.details.level.base),
+            ].filter(R.isNonNull),
             details: system.attributes.ac.details,
         });
         this.armorClass = armorStatistic.dc;
@@ -265,7 +266,8 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                         modifier: system.perception.mod,
                         adjustments: extractModifierAdjustments(modifierAdjustments, domains, "base"),
                     }),
-                ],
+                    createProficiencyWithoutLevelModifier(system.details.level.base),
+                ].filter(R.isNonNull),
                 check: { type: "perception-check" },
                 senses: system.perception.senses,
                 vision: system.perception.vision,
@@ -319,7 +321,8 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                         modifier: base,
                         adjustments: extractModifierAdjustments(modifierAdjustments, domains, "base"),
                     }),
-                ],
+                    createProficiencyWithoutLevelModifier(system.details.level.base),
+                ].filter(R.isNonNull),
                 check: {
                     type: "saving-throw",
                 },
@@ -355,6 +358,10 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                             }),
                     ) ?? [];
 
+            // Untrained skills fall back to a bare ability modifier with no level baked in, so the variant only
+            // removes the creature's level from skills the monster is actually trained in. (The untrained -2 of
+            // the variant's proficiency table applies to players, whose math is rebuilt from proficiency ranks.)
+            const proficient = skillSlug in this._source.system.skills;
             const statistic = new Statistic(this, {
                 slug: skillSlug,
                 label,
@@ -368,9 +375,10 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                         adjustments: extractModifierAdjustments(modifierAdjustments, domains, "base"),
                     }),
                     ...specialModifiers,
-                ],
+                    proficient ? createProficiencyWithoutLevelModifier(this.system.details.level.base) : null,
+                ].filter(R.isNonNull),
                 lore: false,
-                proficient: skillSlug in this._source.system.skills,
+                proficient,
                 check: { type: "skill-check" },
             });
 
@@ -395,7 +403,8 @@ class NPCPF2e<TParent extends TokenDocumentPF2e | null = TokenDocumentPF2e | nul
                         modifier: loreItem.system.mod.value,
                         adjustments: extractModifierAdjustments(modifierAdjustments, domains, "base"),
                     }),
-                ],
+                    createProficiencyWithoutLevelModifier(this.system.details.level.base),
+                ].filter(R.isNonNull),
                 lore: true,
                 proficient: true,
                 check: { type: "skill-check" },
